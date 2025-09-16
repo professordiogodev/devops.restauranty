@@ -5,81 +5,103 @@ on:
   pull_request:
 
 jobs:
-  build:
+  # Figure out which folders changed
+  changes:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - backend/auth
-          - backend/discounts
-          - backend/items
-          - client
+    outputs:
+      auth:      ${{ steps.filter.outputs.auth }}
+      discounts: ${{ steps.filter.outputs.discounts }}
+      items:     ${{ steps.filter.outputs.items }}
+      client:    ${{ steps.filter.outputs.client }}
+      workflow:  ${{ steps.filter.outputs.workflow }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            auth:
+              - 'backend/auth/**'
+            discounts:
+              - 'backend/discounts/**'
+            items:
+              - 'backend/items/**'
+            client:
+              - 'client/**'
+            workflow:
+              - '.github/workflows/ci.yml'
 
+  build-backend-auth:
+    name: build (backend/auth)
+    needs: changes
+    if: needs.changes.outputs.auth == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ${{ matrix.service }}
-
+        working-directory: backend/auth
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Detect lockfile
-        id: lock
-        run: |
-          if [ -f package-lock.json ]; then
-            echo "has=true" >> "$GITHUB_OUTPUT"
-            echo "file=package-lock.json" >> "$GITHUB_OUTPUT"
-          elif [ -f npm-shrinkwrap.json ]; then
-            echo "has=true" >> "$GITHUB_OUTPUT"
-            echo "file=npm-shrinkwrap.json" >> "$GITHUB_OUTPUT"
-          elif [ -f yarn.lock ]; then
-            echo "has=true" >> "$GITHUB_OUTPUT"
-            echo "yarn=true" >> "$GITHUB_OUTPUT"
-            echo "file=yarn.lock" >> "$GITHUB_OUTPUT"
-          else
-            echo "has=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Setup Node (npm cache)
-        if: steps.lock.outputs.has == 'true' && steps.lock.outputs.yarn != 'true'
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: ${{ matrix.service }}/${{ steps.lock.outputs.file }}
+          cache-dependency-path: backend/auth/package-lock.json
+      - run: npm ci
+      - run: npm run build --if-present
 
-      - name: Setup Node (yarn cache)
-        if: steps.lock.outputs.yarn == 'true'
-        uses: actions/setup-node@v4
+  build-backend-discounts:
+    name: build (backend/discounts)
+    needs: changes
+    if: needs.changes.outputs.discounts == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/discounts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: yarn
-          cache-dependency-path: ${{ matrix.service }}/yarn.lock
+          cache: npm
+          cache-dependency-path: backend/discounts/package-lock.json
+      - run: npm ci
+      - run: npm run build --if-present
 
-      - name: Setup Node (no cache)
-        if: steps.lock.outputs.has != 'true'
-        uses: actions/setup-node@v4
+  build-backend-items:
+    name: build (backend/items)
+    needs: changes
+    if: needs.changes.outputs.items == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/items
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: backend/items/package-lock.json
+      - run: npm ci
+      - run: npm run build --if-present
 
-      - name: Install deps
-        run: |
-          if [ -f yarn.lock ]; then
-            corepack enable
-            yarn install --frozen-lockfile || yarn install
-          else
-            npm ci --no-audit --no-fund || npm install
-          fi
-
-      # Build non-client services normally
-      - name: Build (node service)
-        if: matrix.service != 'client'
-        run: npm run build --if-present
-
-      # Build client but DO NOT fail on warnings (CRA treats warnings as errors when CI=true)
-      - name: Build (client - allow warnings)
-        if: matrix.service == 'client'
-        env:
-          CI: ""          # <- critical line
-        run: npm run build
+  build-client:
+    name: build (client)
+    needs: changes
+    if: needs.changes.outputs.client == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    env:
+      # CRA treats warnings as errors when CI=true. Keep this relaxed for now.
+      CI: ""
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run build
