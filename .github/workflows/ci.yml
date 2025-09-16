@@ -1,0 +1,21 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        path: [backend/auth, backend/discounts, backend/items, client]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        working-directory: ${{ matrix.path }}
+        run: npm ci
+      - name: Build
+        working-directory: ${{ matrix.path }}
+        run: npm run build --if-present
