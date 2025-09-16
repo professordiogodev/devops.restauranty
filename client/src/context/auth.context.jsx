@@ -1,97 +1,63 @@
-import React, { useState, useEffect } from "react";
-import authService from "../services/auth.service";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-const AuthContext = React.createContext();
+export const AuthContext = createContext(null);
 
-function AuthProviderWrapper(props) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  const [isAdmin, setisAdmin] = useState(false);
+export function AuthProvider({ children }) {
+  const [token, setToken] = useState(() => localStorage.getItem("authToken"));
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("user") || "null"); }
+    catch { return null; }
+  });
 
+  const isLoggedIn = !!token;
+  const isAdmin = user?.role === "admin";
 
-  const storeToken = (token) => {
-    localStorage.setItem("authToken", token);
+  const storeToken = (t) => {
+    if (t) localStorage.setItem("authToken", t);
+    else localStorage.removeItem("authToken");
+    setToken(t || null);
   };
 
-  const authenticateUser = () => {
-    // Get the stored token from the localStorage
-    const storedToken = localStorage.getItem("authToken");
-
-    // If the token exists in the localStorage
-    if (storedToken) {
-      // Send a request to the server using axios
-      /* 
-        axios.get(
-          `${process.env.REACT_APP_SERVER_URL}/auth/verify`,
-          { headers: { Authorization: `Bearer ${storedToken}` } }
-        )
-        .then((response) => {})
-        */
-
-      // Or using a service
-      authService
-        .verify()
-        .then((response) => {
-          // If the server verifies that JWT token is valid  ✅
-          const user = response.data;
-          console.log(user.role)
-          if (user.role === 'admin') {
-            setisAdmin(true)
-          }
-          // Update state variables
-          setIsLoggedIn(true);
-          setIsLoading(false);
-          setUser(user);
-        })
-        .catch((error) => {
-          // If the server sends an error response (invalid token) ❌
-          // Update state variables
-          setIsLoggedIn(false);
-          setIsLoading(false);
-          setUser(null);
-          setisAdmin(false);
-        });
-    } else {
-      // If the token is not available
-      setIsLoggedIn(false);
-      setIsLoading(false);
-      setUser(null);
-      setisAdmin(false);
-    }
-  };
-
-  const removeToken = () => {
-    localStorage.removeItem("authToken");
+  const storeUser = (u) => {
+    if (u) localStorage.setItem("user", JSON.stringify(u));
+    else localStorage.removeItem("user");
+    setUser(u || null);
   };
 
   const logOutUser = () => {
-    // Upon logout, remove the token from the localStorage
-    removeToken();
-    authenticateUser();
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    setToken(null);
+    setUser(null);
   };
 
   useEffect(() => {
-    // Run this code once the AuthProviderWrapper component in the App loads for the first time.
-    // This effect runs when the application and the AuthProviderWrapper component load for the first time.
-    authenticateUser();
+    const onStorage = (e) => {
+      if (e.key === "authToken") setToken(localStorage.getItem("authToken"));
+      if (e.key === "user") {
+        try { setUser(JSON.parse(localStorage.getItem("user") || "null")); }
+        catch { setUser(null); }
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        isLoggedIn,
-        isLoading,
-        user,
-        isAdmin,
-        storeToken,
-        authenticateUser,
-        logOutUser,
-      }}
-    >
-      {props.children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ isLoggedIn, isAdmin, user, storeToken, storeUser, logOutUser }),
+    [isLoggedIn, isAdmin, user]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export { AuthProviderWrapper, AuthContext };
+// hook for files doing: import { useAuth } from '...'
+export const useAuth = () => useContext(AuthContext);
+
+// keep compatibility with code that imports AuthProviderWrapper
+export const AuthProviderWrapper = ({ children }) => (
+  <AuthProvider>{children}</AuthProvider>
+);
+
+// also provide default in case something does: import AuthContext from '...'
+export default AuthContext;

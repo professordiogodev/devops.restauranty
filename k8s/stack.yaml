@@ -1,0 +1,202 @@
+# --- Storage (Mongo PVC) ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+# --- Mongo ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  labels: { app: mongo }
+spec:
+  selector: { app: mongo }
+  ports:
+    - port: 27017
+      targetPort: 27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: mongo } }
+  template:
+    metadata: { labels: { app: mongo } }
+    spec:
+      volumes:
+        - name: mongo-data
+          persistentVolumeClaim: { claimName: mongo-pvc }
+      containers:
+        - name: mongo
+          image: mongo:7.0-jammy
+          args: ["--dbpath", "/data/db"]
+          ports: [{ containerPort: 27017 }]
+          volumeMounts:
+            - { name: mongo-data, mountPath: /data/db }
+
+# --- Auth ---
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth
+  labels: { app: auth }
+spec:
+  selector: { app: auth }
+  ports:
+    - port: 3001
+      targetPort: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: auth } }
+  template:
+    metadata: { labels: { app: auth } }
+    spec:
+      containers:
+        - name: auth
+          image: fmtorres/restauranty-auth:0.1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: HOST, value: "0.0.0.0" }
+            - { name: PORT, value: "3001" }
+            - { name: MONGODB_URI, value: "mongodb://mongo:27017/flor" }
+          ports: [{ containerPort: 3001 }]
+          command: ["node","server.js"]
+
+# --- Discounts ---
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discounts
+  labels: { app: discounts }
+spec:
+  selector: { app: discounts }
+  ports:
+    - port: 3002
+      targetPort: 3002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discounts
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: discounts } }
+  template:
+    metadata: { labels: { app: discounts } }
+    spec:
+      containers:
+        - name: discounts
+          image: fmtorres/restauranty-discounts:0.1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: HOST, value: "0.0.0.0" }
+            - { name: PORT, value: "3002" }
+            - { name: MONGODB_URI, value: "mongodb://mongo:27017/flor" }
+          ports: [{ containerPort: 3002 }]
+          command: ["node","server.js"]
+
+# --- Items ---
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: items
+  labels: { app: items }
+spec:
+  selector: { app: items }
+  ports:
+    - port: 3003
+      targetPort: 3003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: items
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: items } }
+  template:
+    metadata: { labels: { app: items } }
+    spec:
+      containers:
+        - name: items
+          image: fmtorres/restauranty-items:0.1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: HOST, value: "0.0.0.0" }
+            - { name: PORT, value: "3003" }
+            - { name: MONGODB_URI, value: "mongodb://mongo:27017/flor" }
+          ports: [{ containerPort: 3003 }]
+          command: ["node","server.js"]
+
+# --- Client (your fixed image already built inside Minikube) ---
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+  labels: { app: client }
+spec:
+  selector: { app: client }
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: client } }
+  template:
+    metadata: { labels: { app: client } }
+    spec:
+      containers:
+        - name: client
+          image: restauranty/client:fix-signup-2
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 80 }]
+
+# --- Ingress (with TLS secret you already created) ---
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: restauranty
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: ["restauranty.local"]
+      secretName: restauranty-tls
+  rules:
+    - host: restauranty.local
+      http:
+        paths:
+          - path: /api/auth
+            pathType: Prefix
+            backend: { service: { name: auth, port: { number: 3001 } } }
+          - path: /api/discounts
+            pathType: Prefix
+            backend: { service: { name: discounts, port: { number: 3002 } } }
+          - path: /api/items
+            pathType: Prefix
+            backend: { service: { name: items, port: { number: 3003 } } }
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: client, port: { number: 80 } } }

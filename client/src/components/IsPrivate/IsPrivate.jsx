@@ -1,22 +1,12 @@
-import { useContext } from "react";
-import { AuthContext } from "../../context/auth.context";
+// client/src/components/IsPrivate/IsPrivate.jsx
 import { Navigate } from "react-router-dom";
-import Loading from "../Loading/Loading";
+import { useAuth } from "../../context/auth.context";
 
-function IsPrivate({ children }) {
-  const { isLoggedIn, isLoading } = useContext(AuthContext);
+export default function IsPrivate({ children }) {
+  const { isLoggedIn, isLoading } = useAuth();
 
-  // If the authentication is still loading ⏳
-  if (isLoading) {
-    return <Loading />;
-  }
+  if (isLoading) return null; // or a small spinner
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
 
-  if (!isLoggedIn) {
-    // If the user is not logged in navigate to the login page ❌
-    return <Navigate to="/login" />;
-  }
-  // If the user is logged in, allow to see the page ✅
   return children;
 }
-
-export default IsPrivate;

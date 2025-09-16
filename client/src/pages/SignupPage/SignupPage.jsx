@@ -1,116 +1,89 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import authService from "../../services/auth.service";
-import { MdEmail } from "react-icons/md"
-import { FaLock } from "react-icons/fa6"
-import { FaCircleUser } from "react-icons/fa6"
-import { FaRegCircleUser } from "react-icons/fa6"
-import { FaLocationDot } from "react-icons/fa6"
-import { FaPhoneFlip } from "react-icons/fa6"
 
-function SignupPage() {
-  const [name, setName] = useState("");
-  const [surname, setSurname] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
-  const [password, setPassword] = useState("");
-  const [phoneNumber, setphoneNumber] = useState("");
-  const [errorMessage, setErrorMessage] = useState(undefined);
 
+// Backend expects: name, surname, email, address, phoneNumber, password
+export default function SignupPage() {
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    address: "",
+    phone: "",
+  });
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
-  const handleEmail = (e) => setEmail(e.target.value);
-  const handlePassword = (e) => setPassword(e.target.value);
-  const handleName = (e) => setName(e.target.value);
-  const handleSurname = (e) => setSurname(e.target.value);
-  const handleAddress = (e) => setAddress(e.target.value);
-  const handlephoneNumber = (e) => setphoneNumber(e.target.value);
+  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSignupSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    // Create an object representing the request body
-    if (name === '' || surname === '' || email === '' || password === '' || address === '' || phoneNumber === '') {
-      setErrorMessage('All fields are required');
-      return;
-    } else {
-      const requestBody = { name, surname, email, password, address, phoneNumber };
-      authService
-        .signup(requestBody)
-        .then((response) => {
-          // If the POST request is successful redirect to the login page
-          navigate("/login");
-        })
-        .catch((error) => {
-          // If the request resolves with an error, set the error message in the state
-          console.log(error)
-          const errorDescription = error.response.data.message;
-          setErrorMessage(errorDescription);
-        });
+    setError("");
+    setBusy(true);
+    try {
+      await authService.signup({
+        name: form.firstName.trim(),
+        surname: form.lastName.trim(),
+        email: form.email.trim(),
+        address: form.address.trim(),
+        phoneNumber: form.phone.trim(),
+        password: form.password,
+      });
+      navigate("/login");
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Sign up failed. Please try again.";
+      setError(msg);
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <div className="MainSignup">
-      <div className="SignupPage">
-        <h1>Sign Up</h1>
+    <div className="auth-page" style={{ padding: "2rem" }}>
+      <h1 style={{ textAlign: "center", marginBottom: "1rem" }}>Sign Up</h1>
 
-        <form onSubmit={handleSignupSubmit}>
-          <div className="inputwrap">
-            <div className="relative mt-6 mb-6">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FaCircleUser className="w-[1.15rem] h-[1.15rem] text-gray-400" />
-              </div>
-              <input className="input-forms" type="text" name="name" placeholder="Name" value={name} onChange={handleName} />
-            </div>
-            <div className="relative mb-6">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FaRegCircleUser className="w-[1.15rem] h-[1.15rem] text-gray-400" />
-              </div>
-              <input className="input-forms" type="text" name="surname" placeholder="Surname" value={surname} onChange={handleSurname} />
-            </div>
-            <div className="relative mb-6">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <MdEmail className="w-[1.15rem] h-[1.15rem] text-gray-400" />
-              </div>
-              <input className="input-forms" type="email" name="email" placeholder="Email" value={email} onChange={handleEmail} />
-            </div>
-            <div className="relative  mb-6">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FaLocationDot className="w-[1.15rem] h-[1.15rem] text-gray-400" />
-              </div>
-              <input className="input-forms" type="text" name="address" placeholder="Address" value={address} onChange={handleAddress} />
-            </div>
-            <div className="relative mb-6">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FaPhoneFlip className="w-[1.15rem] h-[1.15rem] text-gray-400" />
-              </div>
-              <input className="input-forms" type="text" name="phoneNumber" placeholder="Phone Number" value={phoneNumber} onChange={handlephoneNumber} />
-            </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FaLock className="w-[1.15rem] h-[1.15rem] text-gray-400" />
-              </div>
-              <input
-                className="input-forms"
-                placeholder="Password"
-                type="password"
-                name="password"
-                value={password}
-                onChange={handlePassword}
-              />
-            </div>
-            <button className="button" type="submit">Sign Up</button>
-            {errorMessage && <p className="error-message">{errorMessage}</p>}
+      <form onSubmit={onSubmit} className="form"
+            style={{ maxWidth: 680, margin: "0 auto", display: "grid", gap: "0.75rem" }}>
+        <label>First name
+          <input name="firstName" value={form.firstName} onChange={onChange} required />
+        </label>
 
-            <p>Already have account?</p>
-            <Link to={"/login"}> <p className="sign-up-link">Login</p></Link>
-          </div>
-        </form>
+        <label>Last name
+          <input name="lastName" value={form.lastName} onChange={onChange} required />
+        </label>
 
+        <label>Email
+          <input type="email" name="email" value={form.email} onChange={onChange} required />
+        </label>
 
-      </div>
+        <label>Password
+          <input type="password" name="password" value={form.password} onChange={onChange} required minLength={8} />
+        </label>
+
+        <label>Address
+          <input name="address" value={form.address} onChange={onChange} />
+        </label>
+
+        <label>Phone
+          <input name="phone" value={form.phone} onChange={onChange} />
+        </label>
+
+        {error && <p style={{ color: "#c00", marginTop: "0.5rem" }}>{error}</p>}
+
+        <button type="submit" disabled={busy} style={{ padding: "0.6rem 1rem" }}>
+          {busy ? "Creating account…" : "Create account"}
+        </button>
+
+        <p style={{ marginTop: "0.5rem" }}>
+          Already have an account? <Link to="/login">Log in</Link>
+        </p>
+      </form>
     </div>
   );
 }
-
-export default SignupPage;
