@@ -1,39 +1,54 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{},"name":"restauranty","namespace":"restauranty"},"spec":{"ingressClassName":"nginx","rules":[{"host":"restauranty.local","http":{"paths":[{"backend":{"service":{"name":"auth","port":{"number":3001}}},"path":"/api/auth","pathType":"Prefix"},{"backend":{"service":{"name":"discounts","port":{"number":3002}}},"path":"/api/discounts","pathType":"Prefix"},{"backend":{"service":{"name":"items","port":{"number":3003}}},"path":"/api/items","pathType":"Prefix"},{"backend":{"service":{"name":"client","port":{"number":80}}},"path":"/","pathType":"Prefix"}]}}],"tls":[{"hosts":["restauranty.local"],"secretName":"restauranty-tls"}]}}
+  creationTimestamp: "2025-09-15T23:58:13Z"
+  generation: 3
   name: restauranty
   namespace: restauranty
+  resourceVersion: "29169"
+  uid: 1829adab-6550-4979-8196-c3db18c4b3dc
 spec:
   ingressClassName: nginx
   rules:
   - host: restauranty.local
     http:
       paths:
-      - path: /api/auth
-        pathType: Prefix
-        backend:
+      - backend:
           service:
             name: auth
             port:
               number: 3001
-      - path: /api/discounts
+        path: /api/auth
         pathType: Prefix
-        backend:
+      - backend:
           service:
             name: discounts
             port:
               number: 3002
-      - path: /api/items
+        path: /api/discounts
         pathType: Prefix
-        backend:
+      - backend:
           service:
             name: items
             port:
               number: 3003
-      - path: /
+        path: /api/items
         pathType: Prefix
-        backend:
+      - backend:
           service:
             name: client
             port:
               number: 80
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - restauranty.local
+    secretName: restauranty-tls
+status:
+  loadBalancer:
+    ingress:
+    - ip: 192.168.58.2
