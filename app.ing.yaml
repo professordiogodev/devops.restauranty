@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app
+  namespace: restauranty
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # Keep the service name segment (auth|items|discounts) as $1,
+    # drop the /api prefix, and pass the remainder as $3
+    nginx.ingress.kubernetes.io/rewrite-target: "/$1/$3"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: restauranty.74-163-127-154.sslip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service: { name: client, port: { number: 80 } }
+
+      - path: /api/(auth)(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service: { name: auth, port: { number: 3001 } }
+
+      - path: /api/(items)(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service: { name: items, port: { number: 3003 } }
+
+      - path: /api/(discounts)(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service: { name: discounts, port: { number: 3002 } }

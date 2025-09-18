@@ -1,0 +1,102 @@
+name: Build & Deploy to AKS
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: docker.io
+  DOCKERHUB_NAMESPACE: fmtorres         # <-- your Docker Hub user/org
+  K8S_NAMESPACE: restauranty
+  AKS_RG: rg-restauranty-ferdi-br       # <-- your app RG
+  AKS_CLUSTER: aks-restauranty-ferdi-br # <-- your AKS name
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # service folder        image name on Docker Hub                k8s deployment name
+          - { context: client,     image: restauranty-client,             deploy: client }
+          - { context: auth,       image: restauranty-auth,               deploy: auth }
+          - { context: items,      image: restauranty-items,              deploy: items }
+          - { context: discounts,  image: restauranty-discounts,          deploy: discounts }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker login (Docker Hub)
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compute tags
+        id: meta
+        run: |
+          TS=$(date +%Y%m%d%H%M)
+          SHORT_SHA=${GITHUB_SHA::7}
+          echo "TAG1=$TS"           >> $GITHUB_OUTPUT
+          echo "TAG2=$SHORT_SHA"    >> $GITHUB_OUTPUT
+          echo "LATEST=latest"      >> $GITHUB_OUTPUT
+
+      - name: Build & push ${{ matrix.image }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.context }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.image }}:${{ steps.meta.outputs.TAG1 }}
+            ${{ env.REGISTRY }}/${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.image }}:${{ steps.meta.outputs.TAG2 }}
+            ${{ env.REGISTRY }}/${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.image }}:${{ steps.meta.outputs.LATEST }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Azure login (OIDC via JSON creds)
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ env.AKS_RG }}
+          cluster-name: ${{ env.AKS_CLUSTER }}
+
+      - name: Roll out deployments with newest tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          ns="${K8S_NAMESPACE}"
+          user="${DOCKERHUB_NAMESPACE}"
+          reg="docker.io"
+
+          # Use the timestamp tag from the build job (recompute to keep it identical across steps)
+          TS=$(date +%Y%m%d%H%M)
+          # If you prefer short SHA instead of TS, swap TAG="$SHORT_SHA"
+          SHORT_SHA=${GITHUB_SHA::7}
+          TAG="$SHORT_SHA"
+
+          declare -A images=(
+            [client]="$reg/$user/restauranty-client:$TAG"
+            [auth]="$reg/$user/restauranty-auth:$TAG"
+            [items]="$reg/$user/restauranty-items:$TAG"
+            [discounts]="$reg/$user/restauranty-discounts:$TAG"
+          )
+
+          for d in "${!images[@]}"; do
+            echo "Updating $d -> ${images[$d]}"
+            kubectl -n "$ns" set image "deploy/$d" "$d=${images[$d]}" --record
+          done
+
+          echo "Waiting for rollouts..."
+          for d in client auth items discounts; do
+            kubectl -n "$ns" rollout status "deploy/$d"
+          done

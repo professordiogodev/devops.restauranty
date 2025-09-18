@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Figure out which folders changed
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      auth:      ${{ steps.filter.outputs.auth }}
+      discounts: ${{ steps.filter.outputs.discounts }}
+      items:     ${{ steps.filter.outputs.items }}
+      client:    ${{ steps.filter.outputs.client }}
+      workflow:  ${{ steps.filter.outputs.workflow }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            auth:
+              - 'backend/auth/**'
+            discounts:
+              - 'backend/discounts/**'
+            items:
+              - 'backend/items/**'
+            client:
+              - 'client/**'
+            workflow:
+              - '.github/workflows/ci.yml'
+
+  build-backend-auth:
+    name: build (backend/auth)
+    needs: changes
+    if: needs.changes.outputs.auth == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/auth
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/auth/package-lock.json
+      - run: npm ci
+      - run: npm run build --if-present
+
+  build-backend-discounts:
+    name: build (backend/discounts)
+    needs: changes
+    if: needs.changes.outputs.discounts == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/discounts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/discounts/package-lock.json
+      - run: npm ci
+      - run: npm run build --if-present
+
+  build-backend-items:
+    name: build (backend/items)
+    needs: changes
+    if: needs.changes.outputs.items == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/items
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/items/package-lock.json
+      - run: npm ci
+      - run: npm run build --if-present
+
+  build-client:
+    name: build (client)
+    needs: changes
+    if: needs.changes.outputs.client == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    env:
+      # CRA treats warnings as errors when CI=true. Keep this relaxed for now.
+      CI: ""
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run build
