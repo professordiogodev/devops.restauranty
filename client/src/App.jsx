@@ -35,10 +35,11 @@ function App() {
         <Navbar />
 
         <Routes>
-          <Route path="/" element={
-            <IsAnon>
-              <LoginPage />
-            </IsAnon>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/home" element={
+            <IsPrivate>
+              <HomePage />
+            </IsPrivate>
           } />
 
           <Route

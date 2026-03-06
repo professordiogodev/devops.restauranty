@@ -2,11 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import authService from "../../services/auth.service";
 import { MdEmail } from "react-icons/md"
-import { FaLock } from "react-icons/fa6"
-import { FaCircleUser } from "react-icons/fa6"
-import { FaRegCircleUser } from "react-icons/fa6"
-import { FaLocationDot } from "react-icons/fa6"
-import { FaPhoneFlip } from "react-icons/fa6"
+import { FaLock, FaCircleUser, FaRegCircleUser, FaLocationDot, FaPhoneFlip } from "react-icons/fa6"
 
 function SignupPage() {
   const [name, setName] = useState("");
@@ -28,7 +24,6 @@ function SignupPage() {
 
   const handleSignupSubmit = (e) => {
     e.preventDefault();
-    // Create an object representing the request body
     if (name === '' || surname === '' || email === '' || password === '' || address === '' || phoneNumber === '') {
       setErrorMessage('All fields are required');
       return;
@@ -37,11 +32,9 @@ function SignupPage() {
       authService
         .signup(requestBody)
         .then((response) => {
-          // If the POST request is successful redirect to the login page
           navigate("/login");
         })
         .catch((error) => {
-          // If the request resolves with an error, set the error message in the state
           console.log(error)
           const errorDescription = error.response.data.message;
           setErrorMessage(errorDescription);
@@ -52,43 +45,48 @@ function SignupPage() {
   return (
     <div className="MainSignup">
       <div className="SignupPage">
-        <h1>Sign Up</h1>
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Create Account</h1>
+          <p className="text-gray-500 text-sm">Join Restauranty and start managing your menu</p>
+        </div>
 
         <form onSubmit={handleSignupSubmit}>
           <div className="inputwrap">
-            <div className="relative mt-6 mb-6">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FaCircleUser className="w-[1.15rem] h-[1.15rem] text-gray-400" />
+            <div className="grid grid-cols-2 gap-3 mt-2 mb-3">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                  <FaCircleUser className="w-[1rem] h-[1rem] text-gray-400" />
+                </div>
+                <input className="input-forms" type="text" name="name" placeholder="First Name" value={name} onChange={handleName} />
               </div>
-              <input className="input-forms" type="text" name="name" placeholder="Name" value={name} onChange={handleName} />
-            </div>
-            <div className="relative mb-6">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FaRegCircleUser className="w-[1.15rem] h-[1.15rem] text-gray-400" />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                  <FaRegCircleUser className="w-[1rem] h-[1rem] text-gray-400" />
+                </div>
+                <input className="input-forms" type="text" name="surname" placeholder="Last Name" value={surname} onChange={handleSurname} />
               </div>
-              <input className="input-forms" type="text" name="surname" placeholder="Surname" value={surname} onChange={handleSurname} />
             </div>
-            <div className="relative mb-6">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <MdEmail className="w-[1.15rem] h-[1.15rem] text-gray-400" />
+            <div className="relative mb-3">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                <MdEmail className="w-[1.1rem] h-[1.1rem] text-gray-400" />
               </div>
-              <input className="input-forms" type="email" name="email" placeholder="Email" value={email} onChange={handleEmail} />
+              <input className="input-forms" type="email" name="email" placeholder="Email address" value={email} onChange={handleEmail} />
             </div>
-            <div className="relative  mb-6">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FaLocationDot className="w-[1.15rem] h-[1.15rem] text-gray-400" />
+            <div className="relative mb-3">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                <FaLocationDot className="w-[1rem] h-[1rem] text-gray-400" />
               </div>
               <input className="input-forms" type="text" name="address" placeholder="Address" value={address} onChange={handleAddress} />
             </div>
-            <div className="relative mb-6">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FaPhoneFlip className="w-[1.15rem] h-[1.15rem] text-gray-400" />
+            <div className="relative mb-3">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                <FaPhoneFlip className="w-[1rem] h-[1rem] text-gray-400" />
               </div>
               <input className="input-forms" type="text" name="phoneNumber" placeholder="Phone Number" value={phoneNumber} onChange={handlephoneNumber} />
             </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <FaLock className="w-[1.15rem] h-[1.15rem] text-gray-400" />
+            <div className="relative mb-2">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                <FaLock className="w-[1rem] h-[1rem] text-gray-400" />
               </div>
               <input
                 className="input-forms"
@@ -99,15 +97,13 @@ function SignupPage() {
                 onChange={handlePassword}
               />
             </div>
-            <button className="button" type="submit">Sign Up</button>
             {errorMessage && <p className="error-message">{errorMessage}</p>}
+            <button className="button w-full" type="submit">Create Account</button>
 
-            <p>Already have account?</p>
-            <Link to={"/login"}> <p className="sign-up-link">Login</p></Link>
+            <p className="text-gray-500 text-sm mt-2">Already have an account?</p>
+            <Link to={"/login"}><p className="sign-up-link text-sm mt-1">Sign in</p></Link>
           </div>
         </form>
-
-
       </div>
     </div>
   );
