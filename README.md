@@ -28,6 +28,7 @@ https://grafana.shishir-pariyar.com
 🌐 Deployment URLs
 Application
 https://restauranty.shishir-pariyar.com
+
 Grafana Monitoring
 https://grafana.shishir-pariyar.com
 —
@@ -76,6 +77,7 @@ https://grafana.shishir-pariyar.com
 ---
 
 # 📁 Project Structure
+
 ![Project Structure](screenshots/project_structure.png)
 ---
 
