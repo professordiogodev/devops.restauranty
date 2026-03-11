@@ -1,47 +1,47 @@
 name: Deploy to AKS
 
 on:
-push:
-branches:
-  - my-version
+  push:
+    branches:
+      - my-version
 
 env:
-ACR_NAME: restaurantyacrshishir
-RESOURCE_GROUP: YOUR_RESOURCE_GROUP
-AKS_CLUSTER: YOUR_AKS_CLUSTER
+  ACR_NAME: restaurantyacrshishir
+  RESOURCE_GROUP: res-rg-shishir
+  AKS_CLUSTER: restauranty-aks-shishir
 
 jobs:
-build-and-deploy:
-runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-  - name: Login to Azure
-    uses: azure/login@v1
-    with:
-      creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-  - name: Login to Azure Container Registry
-    run: az acr login --name $ACR_NAME
+      - name: Login to Azure Container Registry
+        run: az acr login --name $ACR_NAME
 
-  - name: Build Docker images
-    run: |
-      docker build -t restaurantyacrshishir.azurecr.io/auth:latest ./auth
-      docker build -t restaurantyacrshishir.azurecr.io/items:latest ./items
-      docker build -t restaurantyacrshishir.azurecr.io/discounts:latest ./discounts
-      docker build -t restaurantyacrshishir.azurecr.io/client:latest ./client
+      - name: Build Docker images
+        run: |
+          docker build -t restaurantyacrshishir.azurecr.io/auth:latest ./auth
+          docker build -t restaurantyacrshishir.azurecr.io/items:latest ./items
+          docker build -t restaurantyacrshishir.azurecr.io/discounts:latest ./discounts
+          docker build -t restaurantyacrshishir.azurecr.io/client:latest ./client
 
-  - name: Push images to ACR
-    run: |
-      docker push restaurantyacrshishir.azurecr.io/auth:latest
-      docker push restaurantyacrshishir.azurecr.io/items:latest
-      docker push restaurantyacrshishir.azurecr.io/discounts:latest
-      docker push restaurantyacrshishir.azurecr.io/client:latest
+      - name: Push images to ACR
+        run: |
+          docker push restaurantyacrshishir.azurecr.io/auth:latest
+          docker push restaurantyacrshishir.azurecr.io/items:latest
+          docker push restaurantyacrshishir.azurecr.io/discounts:latest
+          docker push restaurantyacrshishir.azurecr.io/client:latest
 
-  - name: Get AKS credentials
-    run: az aks get-credentials --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER --overwrite-existing
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER --overwrite-existing
 
-  - name: Deploy to Kubernetes
-    run: kubectl apply -f k8s/
+      - name: Deploy to Kubernetes
+        run: kubectl apply -f k8s/
