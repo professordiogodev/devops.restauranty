@@ -1,27 +1,26 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: restauranty-ingress
+  name: grafana-ingress
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-
 spec:
   ingressClassName: nginx
 
   tls:
   - hosts:
-    - restauranty.shishir-pariyar.com
-    secretName: restauranty-tls
+    - grafana.shishir-pariyar.com
+    secretName: grafana-tls
 
   rules:
-  - host: restauranty.shishir-pariyar.com
+  - host: grafana.shishir-pariyar.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: client
+            name: monitoring-grafana
             port:
               number: 80
