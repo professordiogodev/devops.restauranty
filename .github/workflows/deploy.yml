@@ -3,7 +3,7 @@ name: Deploy to AKS
 on:
 push:
 branches:
-- my-version
+  - my-version
 
 env:
 ACR_NAME: restaurantyacrshishir
@@ -14,7 +14,6 @@ jobs:
 build-and-deploy:
 runs-on: ubuntu-latest
 
-```
 steps:
   - name: Checkout repository
     uses: actions/checkout@v3
@@ -46,5 +45,3 @@ steps:
 
   - name: Deploy to Kubernetes
     run: kubectl apply -f k8s/
-
-
