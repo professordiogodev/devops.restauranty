@@ -76,31 +76,7 @@ https://grafana.shishir-pariyar.com
 ---
 
 # 📁 Project Structure
-devops.restauranty/
-├── backend/
-│ ├── auth/
-│ ├── discounts/
-│ └── items/
-│
-├── client/
-│
-├── k8s/
-│ ├── auth-deployment.yaml
-│ ├── items-deployment.yaml
-│ ├── discounts-deployment.yaml
-│ ├── client-deployment.yaml
-│ ├── ingress.yaml
-│ ├── grafana-ingress.yaml
-│ └── secrets.yaml
-│
-├── terraform/
-│
-├── monitoring/
-│ └── Prometheus + Grafana
-│
-└── .github/workflows/
-└── ci-cd.yaml
-
+![Project Structure](screenshots/project_structure.png)
 ---
 
 # ⚙️ Local Development
