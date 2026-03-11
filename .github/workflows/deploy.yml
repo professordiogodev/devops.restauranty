@@ -19,10 +19,10 @@ jobs:
 
       - name: Build images
         run: |
-          docker build -t restaurantyacrshishir.azurecr.io/auth:latest ./auth
-          docker build -t restaurantyacrshishir.azurecr.io/items:latest ./items
-          docker build -t restaurantyacrshishir.azurecr.io/discounts:latest ./discounts
-          docker build -t restaurantyacrshishir.azurecr.io/client:latest ./client
+           docker build -t restaurantyacrshishir.azurecr.io/auth:latest ./backend/auth
+           docker build -t restaurantyacrshishir.azurecr.io/items:latest ./backend/items
+           docker build -t restaurantyacrshishir.azurecr.io/discounts:latest ./backend/discounts
+           docker build -t restaurantyacrshishir.azurecr.io/client:latest ./client
 
       - name: Push images
         run: |
