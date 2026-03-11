@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discounts
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discounts
+  template:
+    metadata:
+      labels:
+        app: discounts
+    spec:
+      containers:
+      - name: discounts
+        image: restaurantyacrshishir.azurecr.io/discounts:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3002
+        envFrom:
+        - secretRef:
+            name: restauranty-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discounts
+spec:
+  selector:
+    app: discounts
+  ports:
+  - port: 3002
+    targetPort: 3002

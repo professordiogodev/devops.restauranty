@@ -1,26 +1,23 @@
 services:
+
   mongo:
     image: mongo:latest
     ports:
       - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
 
   auth:
-    build: ./backend/auth
-    ports:
-      - "3001:3001"
-    environment:
-      - MONGODB_URI=mongodb://mongo:27017/restauranty
-    depends_on:
-      - mongo
+   build: ./backend/auth
+   ports:
+    - "3001:3001"
+   depends_on:
+    - mongo
+   environment:
+    - MONGODB_URI=mongodb://mongo:27017/restauranty
 
   discounts:
     build: ./backend/discounts
     ports:
       - "3002:3002"
-    environment:
-      - MONGODB_URI=mongodb://mongo:27017/restauranty
     depends_on:
       - mongo
 
@@ -28,8 +25,6 @@ services:
     build: ./backend/items
     ports:
       - "3003:3003"
-    environment:
-      - MONGODB_URI=mongodb://mongo:27017/restauranty
     depends_on:
       - mongo
 
@@ -38,7 +33,7 @@ services:
     ports:
       - "3000:80"
 
-  haproxy:   # ✅ NOW INSIDE services
+  haproxy:
     image: haproxy:latest
     ports:
       - "80:80"
@@ -46,9 +41,6 @@ services:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
     depends_on:
       - auth
-      - discounts
       - items
+      - discounts
       - client
-
-volumes:
-  mongo-data:
