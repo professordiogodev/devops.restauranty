@@ -1,12 +1,49 @@
-name: Build and Push Images
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
       - my-version
 
+env:
+  REGISTRY: restaurantyacrshishir.azurecr.io
+
 jobs:
+
+# -------------------------
+# 1️⃣ TEST STAGE
+# -------------------------
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service: [auth, items, discounts]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          cd backend/${{ matrix.service }}
+          npm install
+
+      - name: Run tests
+        run: |
+          echo "Running tests for ${{ matrix.service }}"
+
+
+# -------------------------
+# 2️⃣ BUILD + PUSH STAGE
+# -------------------------
   build:
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -15,18 +52,42 @@ jobs:
 
       - name: Login to ACR
         run: |
-          echo "${{ secrets.ACR_PASSWORD }}" | docker login restaurantyacrshishir.azurecr.io -u ${{ secrets.ACR_USERNAME }} --password-stdin
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.REGISTRY }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
       - name: Build images
         run: |
-           docker build -t restaurantyacrshishir.azurecr.io/auth:latest ./backend/auth
-           docker build -t restaurantyacrshishir.azurecr.io/items:latest ./backend/items
-           docker build -t restaurantyacrshishir.azurecr.io/discounts:latest ./backend/discounts
-           docker build -t restaurantyacrshishir.azurecr.io/client:latest ./client
+          docker build -t ${{ env.REGISTRY }}/auth:latest ./backend/auth
+          docker build -t ${{ env.REGISTRY }}/items:latest ./backend/items
+          docker build -t ${{ env.REGISTRY }}/discounts:latest ./backend/discounts
+          docker build -t ${{ env.REGISTRY }}/client:latest ./client
 
       - name: Push images
         run: |
-          docker push restaurantyacrshishir.azurecr.io/auth:latest
-          docker push restaurantyacrshishir.azurecr.io/items:latest
-          docker push restaurantyacrshishir.azurecr.io/discounts:latest
-          docker push restaurantyacrshishir.azurecr.io/client:latest
+          docker push ${{ env.REGISTRY }}/auth:latest
+          docker push ${{ env.REGISTRY }}/items:latest
+          docker push ${{ env.REGISTRY }}/discounts:latest
+          docker push ${{ env.REGISTRY }}/client:latest
+
+
+# -------------------------
+# 3️⃣ DEPLOY STAGE
+# -------------------------
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
+          export KUBECONFIG=$PWD/kubeconfig
+
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -f k8s/
