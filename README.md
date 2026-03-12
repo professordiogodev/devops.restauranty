@@ -35,7 +35,24 @@ cd client npm install npm start
 🐳 Docker
 Each microservice is containerized using Docker.  Example: docker build -t restauranty-auth ./backend/auth  Images are pushed to: restaurantyacrshishir.azurecr.io
 ☸️ Kubernetes Deployment
-Deploy services: kubectl apply -f k8s/  Check pods: kubectl get pods  Check services: kubectl get svc  Check ingress: kubectl get ingress
+
+Deploy services:
+
+kubectl apply -f k8s/
+
+Check pods:
+
+kubectl get pods
+
+Check services:
+
+kubectl get svc
+
+Check ingress:
+
+kubectl get ingress
+
+
 🔐 HTTPS & TLS
 TLS certificates are issued automatically using: • cert-manager • Let's Encrypt  Ingress securely routes traffic for:  https://restauranty.shishir-pariyar.com https://grafana.shishir-pariyar.com
 🔄 CI/CD Pipeline
@@ -48,6 +65,7 @@ Monitoring stack:  • Prometheus • Grafana  Metrics collected from:
 • Kubernetes Secrets for environment variables • HTTPS with TLS certificates • JWT authentication via Auth microservice • Single entry point using NGINX Ingress
 📦 Infrastructure as Code
 Infrastructure created with Terraform.  Resources:  • Azure Resource Group • Azure Kubernetes Service • Azure Container Registry
+
 👨‍💻 Author
 Shishir Pariyar DevOps Engineer | Cloud & Kubernetes Enthusiast
 📜 License
