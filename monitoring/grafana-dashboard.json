@@ -1,0 +1,23 @@
+{
+"title": "Restauranty Microservices",
+"panels": [
+{
+"title": "HTTP Requests",
+"type": "graph",
+"targets": [
+{
+"expr": "http_requests_total"
+}
+]
+},
+{
+"title": "Request Duration",
+"type": "graph",
+"targets": [
+{
+"expr": "http_request_duration_seconds"
+}
+]
+}
+]
+}
