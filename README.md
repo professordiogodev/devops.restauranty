@@ -1,97 +1,266 @@
-# Restauranty
+# 🍽️ Restauranty
 
-A restaurant management platform built with a **microservices architecture**: 3 Node.js/Express backends + a React frontend, unified behind HAProxy path-based routing.
+![Docker](https://img.shields.io/badge/Docker-Containerized-blue?logo=docker)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestrated-blue?logo=kubernetes)
+![Terraform](https://img.shields.io/badge/Terraform-IaC-purple?logo=terraform)
+![Azure](https://img.shields.io/badge/Azure-AKS-blue?logo=microsoftazure)
+![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-black?logo=githubactions)
+![Monitoring](https://img.shields.io/badge/Monitoring-Prometheus%20%7C%20Grafana-orange?logo=grafana)
 
-## Architecture
+A **cloud-native restaurant management platform** built using **microservices architecture** and deployed on **Azure Kubernetes Service (AKS)** with modern **DevOps practices**.
+
+---
+
+# 🚀 Live Demo
+
+Application  
+https://restauranty.shishir-pariyar.com
+
+Monitoring (Grafana)  
+https://grafana.shishir-pariyar.com
+
+---
+
+# 🏗️ Architecture
 
 ```
-                         ┌────────────────────────┐
-                         │   HAProxy / Ingress    │
-    Browser ───────────► │       (port 80)        │
-                         └───────────┬────────────┘
-                                     │
-            ┌────────────────────────┼─────────────────────────┐
-            │                        │                         │
-       /api/auth/*             /api/items/*             /api/discounts/*
-            │                        │                         │
-   ┌────────▼────────┐     ┌─────────▼─────────┐    ┌─────────▼──────────┐
-   │  Auth Service   │     │  Items Service    │    │ Discounts Service  │
-   │   (port 3001)   │     │   (port 3003)     │    │   (port 3002)      │
-   └────────┬────────┘     └─────────┬─────────┘    └──────────┬─────────┘
-            │                        │                         │
-            └────────────────────────┼─────────────────────────┘
-                                     │
-                              ┌──────▼──────┐
-                              │   MongoDB   │
-                              │ (port 27017)│
-                              └─────────────┘
+Browser
+   │
+   ▼
+NGINX Ingress (HTTPS)
+   │
+   ├── /api/auth → Auth Service (Node.js)
+   ├── /api/items → Items Service (Node.js)
+   ├── /api/discounts → Discounts Service (Node.js)
+   │
+   ▼
+MongoDB Database
 ```
 
-## Microservices
+Architecture diagram:
 
-| Service | Port | Path | Responsibilities |
-|---------|------|------|-----------------|
-| **Auth** | 3001 | `/api/auth/*` | User signup, login, JWT authentication |
-| **Discounts** | 3002 | `/api/discounts/*` | Coupon and campaign management |
-| **Items** | 3003 | `/api/items/*` | Menu items, dietary categories, orders |
-| **Frontend** | 3000 | `/` | React SPA (admin dashboard) |
+screenshots/architecture.png
 
-## Quick Start
+---
 
-### 1. Start MongoDB
+# 📁 Project Structure
+
+```
+restauranty
+│
+├── backend
+│   ├── auth
+│   ├── discounts
+│   └── items
+│
+├── client
+│
+├── k8s
+│
+├── terraform
+│
+├── screenshots
+│
+└── .github/workflows
+    └── ci-cd.yaml
+```
+
+---
+
+# 🧰 Tech Stack
+
+## Frontend
+- React 18
+- React Router
+- Tailwind CSS
+- Axios
+
+## Backend
+- Node.js
+- Express
+- JWT Authentication
+- bcryptjs
+
+## Database
+- MongoDB
+
+## Storage
+- Cloudinary
+
+---
+
+# 🐳 Docker
+
+Build example:
 
 ```bash
-docker run -d \
-  --name my-mongo \
-  -p 27017:27017 \
-  -v mongo-data:/data/db \
-  mongo:latest
+docker build -t restauranty-auth ./backend/auth
 ```
 
-### 2. Start each microservice
+Images pushed to:
+
+```
+restaurantyacrshishir.azurecr.io
+```
+
+---
+
+# ☸️ Kubernetes
+
+Deploy services:
 
 ```bash
-# Terminal 1 - Auth
-cd backend/auth && npm install && npm start
-
-# Terminal 2 - Discounts
-cd backend/discounts && npm install && npm start
-
-# Terminal 3 - Items
-cd backend/items && npm install && npm start
-
-# Terminal 4 - Frontend
-cd client && npm install && npm start
+kubectl apply -f k8s/
 ```
 
-### 3. Start HAProxy
+Check resources:
 
 ```bash
-haproxy -f haproxy.cfg
+kubectl get pods
+kubectl get svc
+kubectl get ingress
 ```
 
-Access the app at **http://localhost/**
+---
 
-## Environment Variables
+# 🌐 Networking
 
-Each microservice uses the same set of environment variables (see `.env.example` in each service folder):
+- NGINX Ingress Controller
+- Azure Load Balancer
+- Namecheap DNS
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `SECRET` | JWT signing key | `MySecret1!` |
-| `MONGODB_URI` | MongoDB connection string | `mongodb://127.0.0.1:27017/restauranty` |
-| `CLOUD_NAME` | Cloudinary cloud name | _(ask instructor)_ |
-| `CLOUD_API_KEY` | Cloudinary API key | _(ask instructor)_ |
-| `CLOUD_API_SECRET` | Cloudinary API secret | _(ask instructor)_ |
-| `PORT` | Service port | `3001` / `3002` / `3003` |
+---
 
-For the frontend, use the `REACT_APP_` prefix: `REACT_APP_API_URL=http://localhost:80`
+# 🔐 HTTPS & TLS
 
-## Tech Stack
+Certificates issued automatically using:
 
-- **Frontend**: React 18, React Router 6, Tailwind CSS, Axios, React Icons
-- **Backend**: Express, Mongoose, JWT (jsonwebtoken + express-jwt), bcryptjs
-- **Image Storage**: Cloudinary (via multer-storage-cloudinary)
-- **Monitoring**: Prometheus metrics (`/metrics` endpoint on each backend service)
-- **Routing**: HAProxy (local) / Kubernetes Ingress (production)
-- **Database**: MongoDB
+- cert-manager
+- Let's Encrypt
+
+Secure endpoints:
+
+https://restauranty.shishir-pariyar.com  
+https://grafana.shishir-pariyar.com
+
+---
+
+# ⚙️ Local Development
+
+Start MongoDB
+
+```bash
+docker run -d -p 27017:27017 --name my-mongo mongo
+```
+
+Start services
+
+Auth
+
+```bash
+cd backend/auth
+npm install
+npm start
+```
+
+Discounts
+
+```bash
+cd backend/discounts
+npm install
+npm start
+```
+
+Items
+
+```bash
+cd backend/items
+npm install
+npm start
+```
+
+Frontend
+
+```bash
+cd client
+npm install
+npm start
+```
+
+---
+
+# 🔄 CI/CD
+
+CI/CD implemented with **GitHub Actions**.
+
+Pipeline:
+
+1. Install dependencies
+2. Build Docker images
+3. Push to Azure Container Registry
+4. Deploy to AKS
+
+Workflow:
+
+```
+.github/workflows/ci-cd.yaml
+```
+
+---
+
+# 🔑 Secret Management
+
+Sensitive values stored in **Kubernetes Secrets**.
+
+Examples:
+
+- MongoDB URI
+- JWT Secret
+- Cloudinary credentials
+
+---
+
+# 📊 Monitoring
+
+Monitoring stack:
+
+- Prometheus
+- Grafana
+
+Grafana dashboard:
+
+https://grafana.shishir-pariyar.com
+
+---
+
+# 🔒 Security
+
+- HTTPS with TLS
+- JWT authentication
+- Kubernetes Secrets
+- Secure ingress routing
+
+---
+
+# 📦 Infrastructure as Code
+
+Infrastructure created using **Terraform**.
+
+Resources:
+
+- Azure Resource Group
+- Azure Kubernetes Service
+- Azure Container Registry
+
+---
+
+# 👨‍💻 Author
+
+**Shishir Pariyar**  
+DevOps Engineer | Cloud & Kubernetes
+
+---
+
+# 📜 License
+
+Educational & portfolio project.

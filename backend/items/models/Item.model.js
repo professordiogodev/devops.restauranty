@@ -1,6 +1,7 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const itemSchema = new mongoose.Schema({
+const itemSchema = new mongoose.Schema(
+{
   name: {
     type: String,
     required: true
@@ -12,9 +13,11 @@ const itemSchema = new mongoose.Schema({
   description: {
     type: String
   },
-  image: [{
-    type: String
-  }],
+  image: [
+    {
+      type: String
+    }
+  ],
   views: {
     type: Number,
     default: 0
@@ -27,15 +30,15 @@ const itemSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  dietaryInformation: [{
-    type: String
-  }]
+  dietaryInformation: [
+    {
+      type: String
+    }
+  ]
 },
-  {
-    timestamps: true
-  }
+{
+  timestamps: true
+}
 );
 
-const Item = mongoose.model('Item', itemSchema);
-
-module.exports = Item;
+module.exports = mongoose.model("Item", itemSchema);
