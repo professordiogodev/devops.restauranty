@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: restauranty-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+spec:
+  ingressClassName: nginx
+
+  tls:
+  - hosts:
+    - restauranty.shishir-pariyar.com
+    secretName: restauranty-tls
+
+  rules:
+  - host: restauranty.shishir-pariyar.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: client
+            port:
+              number: 80

@@ -1,8 +1,19 @@
+require("dotenv").config();
+
+const mongoose = require("mongoose");
 const app = require("./app");
 
-// ℹ️ Sets the PORT for our app to have access to it. If no env has been set, we hard code it to 6001
 const PORT = process.env.PORT || 3003;
 
-app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-});
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log("Items service connected to MongoDB");
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Service running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Mongo connection error:", err);
+  });
